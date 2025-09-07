@@ -1,0 +1,22 @@
+volumes:
+  service_db_pgsql_17_data:
+    external: false
+  service_db_pgsql_17_backup:
+    external: false
+
+services:   
+  app_db:
+    container_name: service_db_pgsql_17
+    build:
+      context: ../db_pg17
+      dockerfile: Dockerfile.env
+    restart: always
+    ports:
+      - 5435:5432
+    volumes:
+      - service_db_17_data:/var/lib/postgresql/data/
+      - service_db_17_backup:/backups
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=nekolab2025
+      - BACKUP_DIR=/backups
