@@ -1,39 +1,18 @@
+
 services:
-  portainer:
-    image: portainer/portainer-ce:lts
-    restart: always
-    ports:
-      - 8000:8000
-      - 9000:9000
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - portainer_data:/data
-
-  phpmyadmin:
-    image: phpmyadmin
-    restart: always
-    ports:
-      - 8083:80
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      PMA_ARBITRARY: 1
-      #PMA_ABSOLUTE_URI: https://127.0.0.1/phpmyadmin
-
-  adminer:
-    image: adminer:latest
-    restart: always
-    ports:
-      - 8084:8080
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-
   redis:
     image: redis:7.2-alpine
     container_name: librenms_redis
     environment:
-      - "TZ=${TZ}"
+      TZ: ${TZ}
     restart: always
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   msmtpd:
     image: crazymax/msmtpd:latest
@@ -41,10 +20,14 @@ services:
     env_file:
       - "./msmtpd.env"
     restart: always
+    healthcheck:
+      test: ["CMD", "msmtpd", "--version"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
 
-  # debug: `docker compose exec --user librenms librenms php validate.php`
   librenms:
-    image: librenms/librenms:latest
+    image: librenms/librenms:23.11.0
     container_name: librenms
     hostname: librenms
     cap_add:
@@ -62,38 +45,25 @@ services:
     env_file:
       - "./librenms.env"
     environment:
-      - "TZ=${TZ}"
-      - "PUID=${PUID}"
-      - "PGID=${PGID}"
-      - "DB_HOST=${DB_address}"
-      - "DB_PORT=3306"
-      - "DB_NAME=${Librenms_MYSQL_DATABASE}"
-      - "DB_USER=${MYSQL_USER}"
-      - "DB_PASSWORD=${MYSQL_PASSWORD}"
-      - "DB_TIMEOUT=60"
+      &librenms_env
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      DB_HOST: ${DB_address}
+      DB_PORT: 3306
+      DB_NAME: ${Librenms_MYSQL_DATABASE}
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_TIMEOUT: 60
     restart: always
-
-  # redmine:
-    # image: redmine:alpine
-    # container_name: redmine
-    # ports:
-      #  - 8086:3000
-    # volumes:
-        #   - "/opt/redmine/redmine_file:/home/redmine/data"
-    # environment:
-        # - "REDMINE_DB_MYSQL=${DB_address}"
-        # - "REDMINE_DB_NAME=${Redmine_DB_NAME}"
-        # - "REDMINE_DB_USERNAME=${MYSQL_USER}"
-        # - "REDMINE_DB_PASSWORD=${MYSQL_PASSWORD}"
-        # - "REDMINE_EMAIL=redmine@example.com"
-        # - "SMTP_HOST=smtp.gmail.com"
-        # - "SMTP_PORT= 587"
-        # - "SMTP_USER=<email_account>"
-        # - "SMTP_PASSWORD=<email_password>"
-    #restart: always
+    healthcheck:
+      test: ["CMD", "/healthcheck.sh"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
 
   dispatcher:
-    image: librenms/librenms:latest
+    image: librenms/librenms:23.11.0
     container_name: librenms_dispatcher
     hostname: librenms-dispatcher
     cap_add:
@@ -107,21 +77,18 @@ services:
     env_file:
       - "./librenms.env"
     environment:
-      - "TZ=${TZ}"
-      - "PUID=${PUID}"
-      - "PGID=${PGID}"
-      - "DB_HOST=${DB_address}"
-      - "DB_PORT=3306"
-      - "DB_NAME=${Librenms_MYSQL_DATABASE}"
-      - "DB_USER=${MYSQL_USER}"
-      - "DB_PASSWORD=${MYSQL_PASSWORD}"
-      - "DB_TIMEOUT=60"
-      - "DISPATCHER_NODE_ID=dispatcher1"
-      - "SIDECAR_DISPATCHER=1"
+      <<: *librenms_env
+      DISPATCHER_NODE_ID: dispatcher1
+      SIDECAR_DISPATCHER: 1
     restart: always
+    healthcheck:
+      test: ["CMD", "/healthcheck.sh"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
 
   syslogng:
-    image: librenms/librenms:latest
+    image: librenms/librenms:23.11.0
     container_name: librenms_syslogng
     hostname: librenms-syslogng
     cap_add:
@@ -142,20 +109,17 @@ services:
     env_file:
       - "./librenms.env"
     environment:
-      - "TZ=${TZ}"
-      - "PUID=${PUID}"
-      - "PGID=${PGID}"
-      - "DB_HOST=${DB_address}"
-      - "DB_PORT=3306"
-      - "DB_NAME=${Librenms_MYSQL_DATABASE}"
-      - "DB_USER=${MYSQL_USER}"
-      - "DB_PASSWORD=${MYSQL_PASSWORD}"
-      - "DB_TIMEOUT=60"
-      - "SIDECAR_SYSLOGNG=1"
+      <<: *librenms_env
+      SIDECAR_SYSLOGNG: 1
     restart: always
+    healthcheck:
+      test: ["CMD", "/healthcheck.sh"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
 
   snmptrapd:
-    image: librenms/librenms:latest
+    image: librenms/librenms:23.11.0
     container_name: librenms_snmptrapd
     hostname: librenms-snmptrapd
     cap_add:
@@ -176,36 +140,16 @@ services:
     env_file:
       - "./librenms.env"
     environment:
-      - "TZ=${TZ}"
-      - "PUID=${PUID}"
-      - "PGID=${PGID}"
-      - "DB_HOST=${DB_address}"
-      - "DB_PORT=3306"
-      - "DB_NAME=${Librenms_MYSQL_DATABASE}"
-      - "DB_USER=${MYSQL_USER}"
-      - "DB_PASSWORD=${MYSQL_PASSWORD}"
-      - "DB_TIMEOUT=60"
-      - "SIDECAR_SNMPTRAPD=1"
+      <<: *librenms_env
+      SIDECAR_SNMPTRAPD: 1
     restart: always
-
-  pgadmin4:
-    container_name: pgadmin4
-    image: dpage/pgadmin4:latest
-    restart: "always"
-    environment:
-      - PGADMIN_DEFAULT_EMAIL: "dev@demo.com"
-      - PGADMIN_DEFAULT_PASSWORD: "oitmis"
-      - PGADMIN_CONFIG_SESSION_EXPIRATION_TIME: 365
-      - PGADMIN_CONFIG_MAX_SESSION_IDLE_TIME: 60
-    volumes:
-      - pgadmin4-data:/var/lib/pgadmin
-    ports:
-      - "8086:80"
-    extra_hosts:
-       - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "/healthcheck.sh"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
 
 volumes:
-  pgadmin4-data:
+  redis-data:
     external: false
-  portainer_data:
-    external: false
+  

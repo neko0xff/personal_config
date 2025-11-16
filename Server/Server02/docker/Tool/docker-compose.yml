@@ -1,32 +1,51 @@
-version: '1.0'
-
 services:     
-  jellyfin:
-    image: jellyfin/jellyfin
-    container_name: jellyfin
-    user: root:root
+  phpmyadmin:
+    image: phpmyadmin:5.2.1
+    restart: always
     ports:
-      - 8096:8096 # http
-      - 8920:8920 # https
-      - 7359:7359 # 內網
-      - 1900:1900 # DLNA
-    network_mode: 'host'
-    volumes:
-    # 將設定檔和縮圖的存放至目前的目錄
-      - "/opt/jellyfin/config:/config"
-      - "/opt/jellyfin/cache:/cache"
-    # 參考下面格式，將硬碟的目錄(冒號左邊)依序掛載至Jellyfin的/media、/media2、/media3目錄，以此類推
-      - "/home/user/Movies:/Movies:ro"
-      - "/home/user/Video:/Video:ro"
-      - "/home/user/Music:/Music:ro"
-      - "/home/user/Comics:/Comics:ro"
-    restart: 'always' # 開機自動啟動容器
-    devices:
-      - /dev/dri:/dev/dri
+      - 8083:80
     environment:
-      - TZ=Asia/Taipei  # 時區
-      - JELLYFIN_PublishedServerUrl=192.168.0.72 # 除非您有自己的域名，否則不需改這行
-      - video-codecs=vc1dec,h264dec,h264enc,h265dec,h265enc
+      PMA_ARBITRARY: 1
+      #PMA_ABSOLUTE_URI: https://127.0.0.1/phpmyadmin
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  adminer:
+    image: adminer:4.8.1
+    restart: always
+    ports:
+      - 8084:8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # pgAdmin4 - PostgreSQL 管理工具
+  pgadmin4:
+    container_name: pgadmin4
+    image: dpage/pgadmin4:8.5
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "dev@demo.com"
+      PGADMIN_DEFAULT_PASSWORD: "oitmis"
+      PGADMIN_CONFIG_SESSION_EXPIRATION_TIME: 365
+      PGADMIN_CONFIG_MAX_SESSION_IDLE_TIME: 60
+    volumes:
+      - pgadmin4-data:/var/lib/pgadmin
+    ports:
+      - "8086:80"
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/misc/ping"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+
+volumes:
+  pgadmin4-data:
+    external: false
