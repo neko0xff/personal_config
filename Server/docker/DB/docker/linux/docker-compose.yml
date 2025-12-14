@@ -15,6 +15,6 @@ services:
       - /usr/local/service_db_pgsql_17/data:/var/lib/postgresql/data/
       - /usr/local/service_db_pgsql_17/backup:/backups
     environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=nekolab2025
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - BACKUP_DIR=/backups

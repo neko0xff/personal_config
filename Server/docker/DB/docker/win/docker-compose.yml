@@ -17,6 +17,6 @@ services:
       - service_db_17_data:/var/lib/postgresql/data/
       - service_db_17_backup:/backups
     environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=nekolab2025
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - BACKUP_DIR=/backups

@@ -1,0 +1,15 @@
+Dashboard
+===
+
+## 環境配置
+```
+TZ=Asia/Taipei
+PUID=1000
+PGID=1000
+
+DB_address=192.168.0.1
+Librenms_MYSQL_DATABASE=librenms_db
+Redmine_DB_NAME=redmine
+MYSQL_USER=librenms
+MYSQL_PASSWORD=asupersecretpassword
+```

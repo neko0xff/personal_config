@@ -30,6 +30,12 @@
     $ make
     ```
 
+## 環境配置
+```
+POSTGRES_USER=your_database_username
+POSTGRES_PASSWORD=your_database_password
+```
+
 ## FAQ
 ### Q1 如何檢視容器內是否有自動排程
 - A1: 請使用 `crontab`

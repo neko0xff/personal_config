@@ -8,6 +8,7 @@
 # using a folders
 src
 pkg
+.env
 
 # signed sources
 *.asc
